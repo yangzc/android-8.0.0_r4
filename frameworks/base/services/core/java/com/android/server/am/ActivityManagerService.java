@@ -346,6 +346,7 @@ import android.util.BootTimingsTraceLog;
 import android.util.DebugUtils;
 import android.util.DisplayMetrics;
 import android.util.EventLog;
+import android.util.EventLogTags;
 import android.util.Log;
 import android.util.Pair;
 import android.util.PrintWriterPrinter;
@@ -4491,6 +4492,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             Intent intent, String resolvedType, IBinder resultTo, String resultWho, int requestCode,
             int startFlags, ProfilerInfo profilerInfo, Bundle bOptions, int userId) {
         enforceNotIsolatedCaller("startActivity");
+        // 获得访问的userId
         userId = mUserController.handleIncomingUser(Binder.getCallingPid(), Binder.getCallingUid(),
                 userId, false, ALLOW_FULL_ONLY, "startActivity", null);
         // TODO: Switch to user app stacks here.
@@ -6724,6 +6726,9 @@ public class ActivityManagerService extends IActivityManager.Stub
         long startTime = SystemClock.uptimeMillis();
         if (pid != MY_PID && pid >= 0) {
             synchronized (mPidsSelfLocked) {
+                // SparseArray实现，这个map中在应用启动时初始化出来的。
+                // 所以如果ActivityThread直接attach,
+                // 或者ActivityManager.getService().attachApplication()则不会有任何作用
                 app = mPidsSelfLocked.get(pid);
             }
         } else {
@@ -6733,6 +6738,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (app == null) {
             Slog.w(TAG, "No pending application record for pid " + pid
                     + " (IApplicationThread " + thread + "); dropping process");
+            // EventLog的使用!!!
             EventLog.writeEvent(EventLogTags.AM_DROP_PROCESS, pid);
             if (pid > 0 && pid != MY_PID) {
                 killProcessQuiet(pid);
@@ -6904,6 +6910,7 @@ public class ActivityManagerService extends IActivityManager.Stub
 
             checkTime(startTime, "attachApplicationLocked: immediately before bindApplication");
             mStackSupervisor.mActivityMetricsLogger.notifyBindApplication(app);
+            // 调用客户端的ApplicaionThread的bindApplication.重回用户进程
             if (app.instr != null) {
                 thread.bindApplication(processName, appInfo, providers,
                         app.instr.mClass,

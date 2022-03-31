@@ -155,6 +155,7 @@ import dalvik.system.CloseGuard;
 import dalvik.system.VMDebug;
 import dalvik.system.VMRuntime;
 import org.apache.harmony.dalvik.ddmc.DdmVmInternal;
+import org.conscrypt.TrustedCertificateStore;
 
 final class RemoteServiceException extends AndroidRuntimeException {
     public RemoteServiceException(String msg) {
@@ -6358,6 +6359,7 @@ public final class ActivityThread {
         return retHolder;
     }
 
+    // system: true systemserver启动时 FALSE: 一般应用启动时
     private void attach(boolean system) {
         sCurrentActivityThread = this;
         mSystemThread = system;
@@ -6365,19 +6367,29 @@ public final class ActivityThread {
             ViewRootImpl.addFirstDrawHandler(new Runnable() {
                 @Override
                 public void run() {
+                    // java是解释型语言，具有跨平台性。
+                    // 这里有两个阶段
+                    // 1、Java代码通过编译器编译成.class字节码文件
+                    // 2、字节码通过类加载器加载到内存中，如果判断某段代码属于热点代码（高频执行代码）则编译成本地平台相关机器码（即时编译器概念）jit概念
                     ensureJitEnabled();
                 }
             });
+            // 设置应用名，默认名称，后边会改成processName
             android.ddm.DdmHandleAppName.setAppName("<pre-initialized>",
                                                     UserHandle.myUserId());
             RuntimeInit.setApplicationObject(mAppThread.asBinder());
+            // 获得ams对应的本地代理实现，通过aidl实现
             final IActivityManager mgr = ActivityManager.getService();
             try {
+                // 保存 ApplicationThread 到activityManagerService中，触发ams进行后续动作
+                // ApplicationThread为本地在远程的代理
                 mgr.attachApplication(mAppThread);
             } catch (RemoteException ex) {
                 throw ex.rethrowFromSystemServer();
             }
             // Watch for getting close to heap limit.
+            // 监听GC，这个方法app无法使用到。所以没啥用
+            // 如果判断是否被GC,建议研究一下强、软、若、虚的区别以及使用
             BinderInternal.addGcWatcher(new Runnable() {
                 @Override public void run() {
                     if (!mSomeActivitiesChanged) {
@@ -6402,12 +6414,15 @@ public final class ActivityThread {
         } else {
             // Don't set application object here -- if the system crashes,
             // we can't display an alert, we just want to die die die.
+            // 给特定的UserId设置应用名称
             android.ddm.DdmHandleAppName.setAppName("system_process",
                     UserHandle.myUserId());
             try {
                 mInstrumentation = new Instrumentation();
+                // 通过getSystemContext会默认创建出来一个packageInfo<LoadedApk>
                 ContextImpl context = ContextImpl.createAppContext(
                         this, getSystemContext().mPackageInfo);
+                // 这时候默认的application就是android.app.Application
                 mInitialApplication = context.mPackageInfo.makeApplication(true, null);
                 mInitialApplication.onCreate();
             } catch (Exception e) {
@@ -6417,6 +6432,8 @@ public final class ActivityThread {
         }
 
         // add dropbox logging to libcore
+        // dropBox用来记录系统发生的比较严重的问题，开发者可以根据这些问题来定位相应的bug
+        //todo 后边自己研究dropBox机制，看看能不能为我所用
         DropBox.setReporter(new DropBoxReporter());
 
         ViewRootImpl.ConfigChangedCallback configChangedCallback
@@ -6438,6 +6455,7 @@ public final class ActivityThread {
                 }
             }
         };
+        // 这里的config是指例如字体字号、语言、设备地区（China）,国际移动用户识别码(移动、联通、电信)
         ViewRootImpl.addConfigCallback(configChangedCallback);
     }
 
@@ -6516,15 +6534,22 @@ public final class ActivityThread {
         Environment.initForCurrentUser();
 
         // Set the reporter for event logging in libcore
+        // Access to the system diagnostic event record.
+        // System diagnostic events are used to record certain system-level events
+        // (such as garbage collection, activity manager state, system watchdogs,
+        // and other low level activity), which may be automatically
+        // collected and analyzed during system development.
+        // 记录例如垃圾回收，activity状态变化等消息
         EventLogger.setReporter(new EventLoggingReporter());
 
         // Make sure TrustedCertificateStore looks in the right place for CA certificates
+        // 通过userId获得可访问的文件目录
         final File configDir = Environment.getUserConfigDirectory(UserHandle.myUserId());
         TrustedCertificateStore.setDefaultUserDirectory(configDir);
 
         Process.setArgV0("<pre-initialized>");
 
-        Looper.prepareMainLooper();
+        Looper.prepareMainLooper();// 启动looper,并保存在ThreadLocal中
 
         ActivityThread thread = new ActivityThread();
         thread.attach(false);
@@ -6540,7 +6565,7 @@ public final class ActivityThread {
 
         // End of event ActivityThreadMain.
         Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
-        Looper.loop();
+        Looper.loop(); // 启动looper
 
         throw new RuntimeException("Main thread loop unexpectedly exited");
     }

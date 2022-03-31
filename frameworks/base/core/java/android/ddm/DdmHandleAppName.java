@@ -76,6 +76,7 @@ public class DdmHandleAppName extends ChunkHandler {
         mAppName = name;
 
         // if DDMS is already connected, send the app name up
+        // ddms: DalvikDebugMonitorServer 虚拟机debug监控服务
         sendAPNM(name, userId);
     }
 

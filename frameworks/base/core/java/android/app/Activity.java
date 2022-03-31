@@ -4473,6 +4473,8 @@ public class Activity extends ContextThemeWrapper
                     this, mMainThread.getApplicationThread(), mToken, this,
                     intent, requestCode, options);
             if (ar != null) {
+                // 发送结果到相应的Activity
+                // 通过H发送相应消息 最终会调用到onActivityResult
                 mMainThread.sendActivityResult(
                     mToken, mEmbeddedID, requestCode, ar.getResultCode(),
                     ar.getResultData());

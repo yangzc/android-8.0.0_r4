@@ -695,6 +695,9 @@ class ActivityStarter {
             componentSpecified = false;
         }
 
+        // Supervisor[ˈsuːpəvaɪzə(r)]监督人; 指导者; 主管人;
+        // Resolve[rɪˈzɒlv]：表决
+        // 根据Intent信息获得表决结果
         ResolveInfo rInfo = mSupervisor.resolveIntent(intent, resolvedType, userId);
         if (rInfo == null) {
             UserInfo userInfo = mSupervisor.getUserInfo(userId);
@@ -721,8 +724,10 @@ class ActivityStarter {
             }
         }
         // Collect information about the target of the Intent.
+        // 根据表决结果获得ActivityInfo
         ActivityInfo aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags, profilerInfo);
 
+        // 貌似bundle里可以定义一些系统级的变量。例如启动的taskId和stackId
         ActivityOptions options = ActivityOptions.fromBundle(bOptions);
         ActivityStackSupervisor.ActivityContainer container =
                 (ActivityStackSupervisor.ActivityContainer)iContainer;
