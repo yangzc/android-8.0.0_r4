@@ -457,6 +457,7 @@ public class ZygoteProcess {
 
         if (primaryZygoteState == null || primaryZygoteState.isClosed()) {
             try {
+                // 通过本地广播连接远程zygote
                 primaryZygoteState = ZygoteState.connect(mSocket);
             } catch (IOException ioe) {
                 throw new ZygoteStartFailedEx("Error connecting to primary zygote", ioe);

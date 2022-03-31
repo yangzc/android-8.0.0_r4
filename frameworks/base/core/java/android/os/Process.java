@@ -450,6 +450,7 @@ public class Process {
                                   String appDataDir,
                                   String invokeWith,
                                   String[] zygoteArgs) {
+        // yangzc 启动zygote
         return zygoteProcess.start(processClass, niceName, uid, gid, gids,
                     debugFlags, mountExternal, targetSdkVersion, seInfo,
                     abi, instructionSet, appDataDir, invokeWith, zygoteArgs);
