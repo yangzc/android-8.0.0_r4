@@ -1834,6 +1834,7 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
                         }
 
                         if (r.app == null || r.app.thread == null) {
+                            // yangzc 如果应用不存在，则启动
                             if (makeVisibleAndRestartIfNeeded(starting, configChanges, isTop,
                                     resumeNextActivity, r)) {
                                 if (activityNdx >= activities.size()) {
@@ -2021,6 +2022,7 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
                 r.setVisible(true);
             }
             if (r != starting) {
+                // yangzc 启动Activity
                 mStackSupervisor.startSpecificActivityLocked(r, andResume, false);
                 return true;
             }

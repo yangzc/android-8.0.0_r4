@@ -117,6 +117,7 @@ import android.os.UserManager;
 import android.service.voice.IVoiceInteractionSession;
 import android.text.TextUtils;
 import android.util.EventLog;
+import android.util.EventLogTags;
 import android.util.Slog;
 
 import com.android.internal.app.HeavyWeightSwitcherActivity;
@@ -320,6 +321,7 @@ class ActivityStarter {
         ActivityRecord sourceRecord = null;
         ActivityRecord resultRecord = null;
         if (resultTo != null) {
+            // 处理回调对象
             sourceRecord = mSupervisor.isInAnyStackLocked(resultTo);
             if (DEBUG_RESULTS) Slog.v(TAG_RESULTS,
                     "Will send result to " + resultTo + " " + sourceRecord);
@@ -417,6 +419,8 @@ class ActivityStarter {
             }
         }
 
+        // 根据当前的ActivityRecord获得栈ActivityStack
+        // ActivityStack用来管理所有的TaskRecord。也就是系统的所有task
         final ActivityStack resultStack = resultRecord == null ? null : resultRecord.getStack();
 
         if (err != START_SUCCESS) {
@@ -428,6 +432,7 @@ class ActivityStarter {
             return err;
         }
 
+        // 权限检查
         boolean abort = !mSupervisor.checkStartAnyActivityPermission(intent, aInfo, resultWho,
                 requestCode, callingPid, callingUid, callingPackage, ignoreTargetSecurity, callerApp,
                 resultRecord, resultStack, options);
@@ -524,12 +529,13 @@ class ActivityStarter {
             aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags, null /*profilerInfo*/);
         }
 
+        // 创建ActivityRecord,ActivityRecord用来保存当前activity信息
         ActivityRecord r = new ActivityRecord(mService, callerApp, callingPid, callingUid,
                 callingPackage, intent, resolvedType, aInfo, mService.getGlobalConfiguration(),
                 resultRecord, resultWho, requestCode, componentSpecified, voiceSession != null,
                 mSupervisor, container, options, sourceRecord);
         if (outActivity != null) {
-            outActivity[0] = r;
+            outActivity[0] = r;//回调给外边，用来发送ActivityRecord回调消息
         }
 
         if (r.appTimeTracker == null && sourceRecord != null) {
@@ -1024,6 +1030,7 @@ class ActivityStarter {
     }
 
     // Note: This method should only be called from {@link startActivity}.
+    // yangzc
     private int startActivityUnchecked(final ActivityRecord r, ActivityRecord sourceRecord,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
             int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
@@ -1032,14 +1039,17 @@ class ActivityStarter {
         setInitialState(r, options, inTask, doResume, startFlags, sourceRecord, voiceSession,
                 voiceInteractor);
 
+        // 各种判断，生成最终的启动模式
         computeLaunchingTaskFlags();
 
+        // 各种判断，用来计算启动Activity的mLaunchFlags
         computeSourceStack();
 
         mIntent.setFlags(mLaunchFlags);
 
         ActivityRecord reusedActivity = getReusableIntentActivity();
 
+        // 注意mOptions.getLaunchStackId获得stackId可以通过客户端传过来
         final int preferredLaunchStackId =
                 (mOptions != null) ? mOptions.getLaunchStackId() : INVALID_STACK_ID;
         final int preferredLaunchDisplayId =
@@ -1069,6 +1079,7 @@ class ActivityStarter {
             // This code path leads to delivering a new intent, we want to make sure we schedule it
             // as the first operation, in case the activity will be resumed as a result of later
             // operations.
+            // yangzc 注意观察 ！！！
             if ((mLaunchFlags & FLAG_ACTIVITY_CLEAR_TOP) != 0
                     || isDocumentLaunchesIntoExisting(mLaunchFlags)
                     || mLaunchSingleInstance || mLaunchSingleTask) {
@@ -1189,6 +1200,7 @@ class ActivityStarter {
         if (mStartActivity.resultTo == null && mInTask == null && !mAddingToTask
                 && (mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) != 0) {
             newTask = true;
+            // 创建新的task，task内部保存多个activityRecord
             result = setTaskFromReuseOrCreateNewTask(
                     taskToAffiliate, preferredLaunchStackId, topStack);
         } else if (mSourceRecord != null) {
@@ -1236,6 +1248,9 @@ class ActivityStarter {
                 // Also, we don't want to resume activities in a task that currently has an overlay
                 // as the starting activity just needs to be in the visible paused state until the
                 // over is removed.
+
+                // yangzc 这里就有是否启动新进程逻辑
+                // 确定开始显示之后就开始真实启动进程或者启动activity
                 mTargetStack.ensureActivitiesVisibleLocked(null, 0, !PRESERVE_WINDOWS);
                 // Go ahead and tell window manager to execute app transition for this activity
                 // since the app transition will not be triggered through the resume channel.
@@ -1792,6 +1807,7 @@ class ActivityStarter {
         // isLockTaskModeViolation fails below.
 
         if (mReuseTask == null) {
+            // yangzc 创建TaskRecord
             final TaskRecord task = mTargetStack.createTaskRecord(
                     mSupervisor.getNextTaskIdForUserLocked(mStartActivity.userId),
                     mNewTaskInfo != null ? mNewTaskInfo : mStartActivity.info,

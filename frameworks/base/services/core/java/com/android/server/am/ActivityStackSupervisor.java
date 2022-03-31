@@ -1579,6 +1579,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
             // restart the application.
         }
 
+        // yangzc 执行到此处说明需要创建新的进程
         mService.startProcessLocked(r.processName, r.info.applicationInfo, true, 0,
                 "activity", r.intent.getComponent(), false, false, true);
     }
