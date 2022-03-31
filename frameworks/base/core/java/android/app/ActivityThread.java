@@ -6509,6 +6509,8 @@ public final class ActivityThread {
         // CloseGuard defaults to true and can be quite spammy.  We
         // disable it here, but selectively enable it later (via
         // StrictMode) on debug builds, but using DropBox, not logs.
+        // ClosedGuard是一个状态机，用来指示资源释放。
+        // 通过这种机制可以自定义reporter来上报资源回收时机
         CloseGuard.setEnabled(false);
 
         Environment.initForCurrentUser();
