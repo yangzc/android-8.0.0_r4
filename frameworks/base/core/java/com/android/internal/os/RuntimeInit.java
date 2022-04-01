@@ -228,6 +228,7 @@ public class RuntimeInit {
      * @param argv Argument vector for main()
      * @param classLoader the classLoader to load {@className} with
      */
+    // yangzc com.android.server.SystemServer
     private static void invokeStaticMain(String className, String[] argv, ClassLoader classLoader)
             throws Zygote.MethodAndArgsCaller {
         Class<?> cl;

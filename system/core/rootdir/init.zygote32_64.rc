@@ -1,3 +1,5 @@
+// yangzc init进程第一步就是创建一个zygote进程。
+// 从一下命令中可以看出执行的是app_process32程序的main方法。 app_process位于appprocess目录中的app_main.cpp
 service zygote /system/bin/app_process32 -Xzygote /system/bin --zygote --start-system-server --socket-name=zygote
     class main
     priority -20

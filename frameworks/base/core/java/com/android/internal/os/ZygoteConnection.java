@@ -264,6 +264,7 @@ class ZygoteConnection {
                 // in parent...pid of < 0 means failure
                 IoUtils.closeQuietly(childPipeFd);
                 childPipeFd = null;
+                // yangzc 注意 fork出进程之后会把进程id返回给ams
                 return handleParentProc(pid, descriptors, serverPipeFd, parsedArgs);
             }
         } finally {

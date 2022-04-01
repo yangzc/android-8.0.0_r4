@@ -630,6 +630,7 @@ public class ZygoteInit {
             ZygoteConnection.applyInvokeWithSystemProperty(parsedArgs);
 
             /* Request to fork the system server process */
+            // 如果是子进程 则返回0，如果是父进程 则返回子进程ID
             pid = Zygote.forkSystemServer(
                     parsedArgs.uid, parsedArgs.gid,
                     parsedArgs.gids,
@@ -668,6 +669,9 @@ public class ZygoteInit {
         return result;
     }
 
+    /*
+     * 位于app_main.cpp(也就是app_process程序-zygote进程) main方法调用到此
+     */
     public static void main(String argv[]) {
         ZygoteServer zygoteServer = new ZygoteServer();
 
@@ -693,6 +697,7 @@ public class ZygoteInit {
             BootTimingsTraceLog bootTimingsTraceLog = new BootTimingsTraceLog(bootTimeTag,
                     Trace.TRACE_TAG_DALVIK);
             bootTimingsTraceLog.traceBegin("ZygoteInit");
+            // 启动ddms DalvikDebugMonitorServer
             RuntimeInit.enableDdms();
             // Start profiling the zygote initialization.
             SamplingProfilerIntegration.start();
@@ -719,6 +724,7 @@ public class ZygoteInit {
                 throw new RuntimeException("No ABI list supplied.");
             }
 
+            // 启动zygote server（用来fork新进程）
             zygoteServer.registerServerSocket(socketName);
             // In some configurations, we avoid preloading resources and classes eagerly.
             // In such cases, we will preload things prior to our first fork.
@@ -756,12 +762,14 @@ public class ZygoteInit {
             ZygoteHooks.stopZygoteNoThreadCreation();
 
             if (startSystemServer) {
+                // fork出 SystemServer进程
+                // 会出发Loop forever
                 startSystemServer(abiList, socketName, zygoteServer);
             }
 
             Log.i(TAG, "Accepting command socket connections");
             zygoteServer.runSelectLoop(abiList);
-
+            // 关闭serverSocket
             zygoteServer.closeServerSocket();
         } catch (Zygote.MethodAndArgsCaller caller) {
             caller.run();
@@ -835,8 +843,11 @@ public class ZygoteInit {
         Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "ZygoteInit");
         RuntimeInit.redirectLogStreams();
 
+        // 初始化时区、网络等
         RuntimeInit.commonInit();
+        // 初始化binder线程池
         ZygoteInit.nativeZygoteInit();
+        // 初始化并启动systemServer
         RuntimeInit.applicationInit(targetSdkVersion, argv, classLoader);
     }
 

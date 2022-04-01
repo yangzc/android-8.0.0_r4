@@ -94,6 +94,7 @@ public class BinderInternal {
      */
     public static final native void disableBackgroundScheduling(boolean disable);
 
+    // 31个binder线程
     public static final native void setMaxThreads(int numThreads);
     
     static native final void handleGc();

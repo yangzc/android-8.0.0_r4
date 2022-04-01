@@ -184,6 +184,11 @@ static const char ABI_LIST_PROPERTY[] = "ro.product.cpu.abilist32";
 static const char ZYGOTE_NICE_NAME[] = "zygote";
 #endif
 
+// yangzc app_process进程 包括64/32
+/**
+init进程首先就创建出一个zygote进程，也就是app process
+service zygote /system/bin/app_process32 -Xzygote /system/bin --zygote --start-system-server --socket-name=zygote
+*/
 int main(int argc, char* const argv[])
 {
     if (!LOG_NDEBUG) {
@@ -341,6 +346,7 @@ int main(int argc, char* const argv[])
     }
 
     if (zygote) {
+        // 执行ZygoteInit中的main方法
         runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
     } else if (className) {
         runtime.start("com.android.internal.os.RuntimeInit", args, zygote);

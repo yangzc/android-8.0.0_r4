@@ -205,6 +205,7 @@ public final class SystemServer {
 
     // maximum number of binder threads used for system_server
     // will be higher than the system default
+    // 最大binder线程数
     private static final int sMaxBinderThreads = 31;
 
     /**
