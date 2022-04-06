@@ -266,6 +266,7 @@
   </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Perforce" />
+    <mapping directory="$PROJECT_DIR$/art" vcs="Git" />
   </component>
   <component name="com.intellij.jsf.UserDefinedFacesConfigs">
     <option name="USER_DEFINED_CONFIGS">
