@@ -1,3 +1,6 @@
 [submodule "art"]
 	path = art
 	url = git@github.com:yangzc/as-art.git
+[submodule "frameworks/base"]
+	path = frameworks/base
+	url = git@github.com:yangzc/as-base.git
